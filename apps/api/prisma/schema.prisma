@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  RECEPTIONIST
+  HOUSEKEEPING
+  ADMIN
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  DIRTY
+  CLEANING
+  MAINTENANCE
+  RESERVED
+}
+
+enum PricingType {
+  DEFAULT
+  SEASONAL
+  HOLIDAY
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  PAYING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  VNPAY
+  MOMO
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role     @default(CUSTOMER)
+  isActive     Boolean  @default(true)
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookings      Booking[]
+  reviews       Review[]
+  payments      Payment[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model RoomType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  maxGuests   Int
+  areaSqm     Float
+  bedType     String
+  amenities   Json     @default("[]")
+  images      Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rooms        Room[]
+  pricingRules PricingRule[]
+  reviews      Review[]
+
+  @@map("room_types")
+}
+
+model Room {
+  id         String     @id @default(cuid())
+  roomNumber String     @unique
+  floor      Int
+  roomTypeId String
+  status     RoomStatus @default(AVAILABLE)
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  roomType RoomType  @relation(fields: [roomTypeId], references: [id])
+  bookings Booking[]
+
+  @@map("rooms")
+}
+
+model PricingRule {
+  id            String      @id @default(cuid())
+  roomTypeId    String
+  type          PricingType @default(DEFAULT)
+  pricePerNight Decimal     @db.Decimal(12, 2)
+  startDate     DateTime?   @db.Date
+  endDate       DateTime?   @db.Date
+  priority      Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@index([roomTypeId, startDate, endDate])
+  @@map("pricing_rules")
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  bookingCode     String        @unique @default(cuid())
+  customerId      String
+  roomId          String
+  checkIn         DateTime      @db.Date
+  checkOut        DateTime      @db.Date
+  totalAmount     Decimal       @db.Decimal(12, 2)
+  status          BookingStatus @default(PENDING_PAYMENT)
+  paymentDeadline DateTime
+  checkInActual   DateTime?
+  checkOutActual  DateTime?
+  guestNotes      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  customer User           @relation(fields: [customerId], references: [id])
+  room     Room           @relation(fields: [roomId], references: [id])
+  addons   BookingAddon[]
+  review   Review?
+  payment  Payment?
+
+  @@index([customerId, status])
+  @@index([checkIn, checkOut, status])
+  @@index([paymentDeadline, status])
+  @@map("bookings")
+}
+
+model BookingAddon {
+  id          String   @id @default(cuid())
+  bookingId   String
+  serviceName String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  totalPrice  Decimal  @db.Decimal(12, 2)
+  staffNote   String?
+  addedBy     String
+  createdAt   DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("booking_addons")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  customerId String
+  roomTypeId String
+  rating     Int
+  comment    String?
+  isApproved Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  booking  Booking  @relation(fields: [bookingId], references: [id])
+  customer User     @relation(fields: [customerId], references: [id])
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@map("reviews")
+}
+
+model Payment {
+  id                   String        @id @default(cuid())
+  bookingId            String        @unique
+  customerId           String
+  method               PaymentMethod
+  amount               Decimal       @db.Decimal(12, 2)
+  currency             String        @default("VND")
+  status               PaymentStatus @default(PENDING)
+  gatewayTransactionId String?       @unique
+  gatewayUrl           String?
+  paidAt               DateTime?
+  failureReason        String?
+  refundedAt           DateTime?
+  refundAmount         Decimal?      @db.Decimal(12, 2)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  booking  Booking @relation(fields: [bookingId], references: [id])
+  customer User    @relation(fields: [customerId], references: [id])
+
+  @@map("payments")
+}
+
+model Notification {
+  id           String    @id @default(cuid())
+  recipientId  String
+  email        String
+  type         String
+  templateData Json      @default("{}")
+  sentAt       DateTime?
+  failed       Boolean   @default(false)
+  failReason   String?
+  retries      Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  recipient User @relation(fields: [recipientId], references: [id])
+
+  @@map("notifications")
+}
+
+model OutboxEvent {
+  id          String   @id @default(uuid())
+  aggregateId String
+  eventType   String
+  exchange    String
+  routingKey  String
+  payload     Json
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([published, createdAt])
+  @@map("outbox_events")
+}
