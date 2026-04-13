@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "name": "hotel-api",
+  "framework": null,
+  "buildCommand": "cd ../.. && pnpm --filter @hotel/api build",
+  "outputDirectory": "apps/api/dist",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "builds": [
+    {
+      "src": "apps/api/dist/main.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/api/dist/main.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "regions": ["sin1"],
+  "functions": {
+    "apps/api/dist/main.js": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  }
+}

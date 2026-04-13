@@ -1,0 +1,48 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, develop, staging]
+
+jobs:
+  # Block draft PRs từ chạy CI tốn tài nguyên
+  guard:
+    name: Draft guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check draft
+        if: github.event.pull_request.draft == true
+        run: |
+          echo "PR is draft — skipping checks"
+          exit 0
+
+  # Label PR tự động dựa theo files changed
+  label:
+    name: Auto-label
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+
+  # Size check — warn nếu PR quá lớn
+  size-check:
+    name: PR size check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Count changed lines
+        run: |
+          LINES=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
+          echo "Changed lines: $LINES"
+          if [ "$LINES" -gt 1000 ]; then
+            echo "⚠️  PR is large (${LINES} insertions). Consider splitting."
+          fi

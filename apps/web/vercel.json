@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "name": "hotel-web",
+  "framework": "nextjs",
+  "buildCommand": "cd ../.. && pnpm --filter @hotel/web build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "outputDirectory": "apps/web/.next",
+  "regions": ["sin1"]
+}
