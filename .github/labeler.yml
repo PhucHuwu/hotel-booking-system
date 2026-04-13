@@ -2,29 +2,29 @@
 
 api:
   - changed-files:
-      - any-glob-to-any-file: "apps/api/**"
+      - any-glob-to-any-file: 'apps/api/**'
 
 web:
   - changed-files:
-      - any-glob-to-any-file: "apps/web/**"
+      - any-glob-to-any-file: 'apps/web/**'
 
 infra:
   - changed-files:
       - any-glob-to-any-file:
-          - "docker-compose.yml"
-          - "infra/**"
-          - ".github/**"
-          - "turbo.json"
-          - "pnpm-workspace.yaml"
+          - 'docker-compose.yml'
+          - 'infra/**'
+          - '.github/**'
+          - 'turbo.json'
+          - 'pnpm-workspace.yaml'
 
 prisma:
   - changed-files:
-      - any-glob-to-any-file: "apps/api/prisma/**"
+      - any-glob-to-any-file: 'apps/api/prisma/**'
 
 ci/cd:
   - changed-files:
-      - any-glob-to-any-file: ".github/workflows/**"
+      - any-glob-to-any-file: '.github/workflows/**'
 
 docs:
   - changed-files:
-      - any-glob-to-any-file: "*.md"
+      - any-glob-to-any-file: '*.md'

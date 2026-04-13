@@ -192,7 +192,7 @@ hotel-booking/
 ### Yêu cầu
 
 - Node.js ≥ 20
-- pnpm ≥ 9
+- pnpm ≥ 10
 - Docker & Docker Compose
 
 ### 1. Clone repo
@@ -219,6 +219,12 @@ RabbitMQ    → localhost:5672
 ```
 
 ### 3. Cài dependencies
+
+Nếu chưa có `pnpm` trên máy (khuyến nghị dùng Corepack):
+
+```bash
+pnpm setup:pnpm
+```
 
 ```bash
 pnpm install
