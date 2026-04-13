@@ -1,0 +1,1 @@
+Never write comments in code
