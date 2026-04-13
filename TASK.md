@@ -33,4 +33,3 @@ Mục tiêu
 - File .sql hoặc migration script kèm theo.
 - Báo cáo ngắn (1‑2 trang) mô tả các chức năng đã làm được, kèm ảnh chụp màn hình
   kiểm tra (hoặc file log).
-extra line for test
