@@ -1,0 +1,148 @@
+name: CD — Web (Vercel)
+
+on:
+  push:
+    branches: [main, staging, develop]
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "develop"
+        type: choice
+        options: [production, staging, develop]
+
+# Chỉ 1 deploy chạy cùng lúc cho mỗi môi trường
+concurrency:
+  group: cd-web-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ─── Resolve target environment từ branch name ──────────────────────────────
+  resolve-env:
+    name: Resolve environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      vercel_env: ${{ steps.resolve.outputs.vercel_env }}
+      production: ${{ steps.resolve.outputs.production }}
+    steps:
+      - id: resolve
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          MANUAL="${{ github.event.inputs.environment }}"
+
+          if [ -n "$MANUAL" ]; then
+            ENV="$MANUAL"
+          elif [ "$BRANCH" = "main" ]; then
+            ENV="production"
+          elif [ "$BRANCH" = "staging" ]; then
+            ENV="staging"
+          else
+            ENV="develop"
+          fi
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "vercel_env=$ENV"  >> $GITHUB_OUTPUT
+          echo "production=$([ "$ENV" = "production" ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "Deploying web to: $ENV"
+
+  # ─── Deploy to Vercel ────────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy Web → ${{ needs.resolve-env.outputs.environment }}
+    needs: resolve-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-env.outputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Pull Vercel project settings + environment variables
+      - name: Pull Vercel environment (${{ needs.resolve-env.outputs.environment }})
+        run: |
+          vercel pull --yes \
+            --environment=${{ needs.resolve-env.outputs.vercel_env }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      # Build using Vercel's build pipeline (respects .vercel/output)
+      - name: Build (Vercel)
+        run: |
+          vercel build \
+            ${{ needs.resolve-env.outputs.production == 'true' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      # Deploy prebuilt output
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt \
+            ${{ needs.resolve-env.outputs.production == 'true' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $URL"
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      # Comment deploy URL on PR if triggered from PR-related push
+      - name: Comment deploy URL
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const env = '${{ needs.resolve-env.outputs.environment }}';
+            const sha  = context.sha.slice(0, 7);
+            const body = `### 🌐 Web deployed — \`${env}\`\n\n| | |\n|---|---|\n| **URL** | ${url} |\n| **Commit** | \`${sha}\` |\n| **Branch** | \`${{ github.ref_name }}\` |`;
+
+            // Find existing comment and update, or create new
+            const { data: comments } = await github.rest.repos.listCommitComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+            });
+            const existing = comments.find(c => c.body.includes('Web deployed'));
+            if (existing) {
+              await github.rest.repos.updateCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body,
+              });
+            }

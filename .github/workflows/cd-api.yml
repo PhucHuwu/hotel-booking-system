@@ -1,0 +1,176 @@
+name: CD — API (Vercel)
+
+on:
+  push:
+    branches: [main, staging, develop]
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "develop"
+        type: choice
+        options: [production, staging, develop]
+
+concurrency:
+  group: cd-api-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ─── Resolve environment ─────────────────────────────────────────────────────
+  resolve-env:
+    name: Resolve environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      vercel_env: ${{ steps.resolve.outputs.vercel_env }}
+      production: ${{ steps.resolve.outputs.production }}
+    steps:
+      - id: resolve
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          MANUAL="${{ github.event.inputs.environment }}"
+
+          if [ -n "$MANUAL" ]; then
+            ENV="$MANUAL"
+          elif [ "$BRANCH" = "main" ]; then
+            ENV="production"
+          elif [ "$BRANCH" = "staging" ]; then
+            ENV="staging"
+          else
+            ENV="develop"
+          fi
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "vercel_env=$ENV"  >> $GITHUB_OUTPUT
+          echo "production=$([ "$ENV" = "production" ] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          echo "Deploying API to: $ENV"
+
+  # ─── Run DB migrations before deploy (production/staging only) ───────────────
+  migrate:
+    name: DB Migrate (${{ needs.resolve-env.outputs.environment }})
+    needs: resolve-env
+    if: needs.resolve-env.outputs.environment != 'develop'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-env.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prisma migrate deploy
+        run: pnpm --filter @hotel/api exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  # ─── Deploy API to Vercel ────────────────────────────────────────────────────
+  deploy-api:
+    name: Deploy API → ${{ needs.resolve-env.outputs.environment }}
+    needs: [resolve-env, migrate]
+    # migrate job is skipped on develop — still run deploy
+    if: always() && needs.resolve-env.result == 'success' && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve-env.outputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @hotel/api db:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Pull Vercel environment (${{ needs.resolve-env.outputs.environment }})
+        run: |
+          vercel pull --yes \
+            --environment=${{ needs.resolve-env.outputs.vercel_env }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/api
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_API_PROJECT_ID }}
+
+      - name: Build (Vercel)
+        run: |
+          vercel build \
+            ${{ needs.resolve-env.outputs.production == 'true' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/api
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_API_PROJECT_ID }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt \
+            ${{ needs.resolve-env.outputs.production == 'true' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed API to: $URL"
+        working-directory: apps/api
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_API_PROJECT_ID }}
+
+      - name: Comment deploy URL
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const env = '${{ needs.resolve-env.outputs.environment }}';
+            const sha  = context.sha.slice(0, 7);
+            const body = `### ⚙️ API deployed — \`${env}\`\n\n| | |\n|---|---|\n| **URL** | ${url} |\n| **Commit** | \`${sha}\` |\n| **Branch** | \`${{ github.ref_name }}\` |`;
+
+            const { data: comments } = await github.rest.repos.listCommitComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+            });
+            const existing = comments.find(c => c.body.includes('API deployed'));
+            if (existing) {
+              await github.rest.repos.updateCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body,
+              });
+            }
