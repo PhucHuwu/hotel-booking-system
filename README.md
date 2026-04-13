@@ -58,19 +58,21 @@ Hệ thống đặt phòng khách sạn trực tuyến phục vụ 3 nhóm ngư�
 ```mermaid
 flowchart TB
   subgraph CLIENT[Client Layer]
-    CUS[Next.js 15\nCustomer Portal\n:3001]
-    ADM[Next.js 15\nAdmin/Staff Portal\n:3001]
+    CUS["Next.js 15<br/>Customer Portal<br/>:3001"]
+    ADM["Next.js 15<br/>Admin/Staff Portal<br/>:3001"]
   end
 
-  API[NestJS Monolith API\n:3000 /api/v1\n\nAuth, Users, Rooms, Pricing, Search\nBookings, Saga Scheduler, Payments (VNPay)\nStaff, Reports, Notifications]
+  API["NestJS Monolith API<br/>:3000 /api/v1"]
+  MOD["Auth, Users, Rooms, Pricing, Search<br/>Bookings, Saga Scheduler, Payments VNPay<br/>Staff, Reports, Notifications"]
 
-  DB[(PostgreSQL\n:5432\nvia PgBouncer)]
-  REDIS[(Redis\n:6379\nSessions, Dist Lock, Search cache)]
-  MQ[(RabbitMQ\n:5672 / :15672\nbooking.exchange\npayment.exchange\nnotification.exchange)]
-  PGB[(PgBouncer\n:6432\npool)]
+  DB[("PostgreSQL<br/>:5432<br/>via PgBouncer")]
+  REDIS[("Redis<br/>:6379<br/>Sessions, Dist Lock, Search cache")]
+  MQ[("RabbitMQ<br/>:5672 / :15672<br/>booking.exchange<br/>payment.exchange<br/>notification.exchange")]
+  PGB[("PgBouncer<br/>:6432<br/>pool")]
 
   CUS -->|HTTP/REST + WebSocket| API
   ADM -->|HTTP/REST + WebSocket| API
+  API -. modules .-> MOD
 
   API --> DB
   API --> REDIS
