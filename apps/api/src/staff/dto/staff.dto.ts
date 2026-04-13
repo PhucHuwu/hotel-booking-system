@@ -1,5 +1,5 @@
-import { IsString, IsInt, IsOptional, Min, IsNumber } from "class-validator";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsString, IsInt, IsOptional, Min, IsNumber } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AddAddonDto {
   @ApiProperty()

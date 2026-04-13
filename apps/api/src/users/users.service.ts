@@ -3,11 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
-} from "@nestjs/common";
-import * as bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
-import { PrismaService } from "../common/prisma/prisma.service";
-import { UpdateProfileDto, CreateStaffDto } from "./dto/users.dto";
+} from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
+import { Role } from '@prisma/client';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { UpdateProfileDto, CreateStaffDto } from './dto/users.dto';
 
 @Injectable()
 export class UsersService {
@@ -27,24 +27,21 @@ export class UsersService {
         createdAt: true,
       },
     });
-    if (!user) throw new NotFoundException("Người dùng không tồn tại");
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
     return user;
   }
 
   async updateMe(userId: string, dto: UpdateProfileDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException("Người dùng không tồn tại");
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
 
     let passwordHash: string | undefined;
     if (dto.newPassword) {
       if (!dto.currentPassword) {
-        throw new BadRequestException("Vui lòng cung cấp mật khẩu hiện tại");
+        throw new BadRequestException('Vui lòng cung cấp mật khẩu hiện tại');
       }
-      const valid = await bcrypt.compare(
-        dto.currentPassword,
-        user.passwordHash,
-      );
-      if (!valid) throw new BadRequestException("Mật khẩu hiện tại không đúng");
+      const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      if (!valid) throw new BadRequestException('Mật khẩu hiện tại không đúng');
       passwordHash = await bcrypt.hash(dto.newPassword, 12);
     }
 
@@ -84,7 +81,7 @@ export class UsersService {
           isActive: true,
           createdAt: true,
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -95,16 +92,12 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (existing) throw new BadRequestException("Email đã được sử dụng");
+    if (existing) throw new BadRequestException('Email đã được sử dụng');
 
-    const validRoles: Role[] = [
-      Role.RECEPTIONIST,
-      Role.HOUSEKEEPING,
-      Role.ADMIN,
-    ];
+    const validRoles: Role[] = [Role.RECEPTIONIST, Role.HOUSEKEEPING, Role.ADMIN];
     const role = dto.role as Role;
     if (!validRoles.includes(role)) {
-      throw new BadRequestException("Vai trò không hợp lệ");
+      throw new BadRequestException('Vai trò không hợp lệ');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -130,10 +123,10 @@ export class UsersService {
 
   async toggleLock(targetId: string, requesterId: string) {
     if (targetId === requesterId) {
-      throw new ForbiddenException("Không thể tự khóa tài khoản của mình");
+      throw new ForbiddenException('Không thể tự khóa tài khoản của mình');
     }
     const user = await this.prisma.user.findUnique({ where: { id: targetId } });
-    if (!user) throw new NotFoundException("Người dùng không tồn tại");
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
 
     return this.prisma.user.update({
       where: { id: targetId },

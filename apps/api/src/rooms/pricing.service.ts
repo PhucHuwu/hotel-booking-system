@@ -1,16 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../common/prisma/prisma.service";
-import { PricingType } from "@prisma/client";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { PricingType } from '@prisma/client';
 
 @Injectable()
 export class PricingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async calculateTotalPrice(
-    roomTypeId: string,
-    checkIn: Date,
-    checkOut: Date,
-  ): Promise<number> {
+  async calculateTotalPrice(roomTypeId: string, checkIn: Date, checkOut: Date): Promise<number> {
     const nights = this.calcNights(checkIn, checkOut);
     let total = 0;
 
@@ -40,13 +36,11 @@ export class PricingService {
           },
         ],
       },
-      orderBy: { priority: "desc" },
+      orderBy: { priority: 'desc' },
     });
 
     if (rules.length === 0) {
-      throw new Error(
-        `Không tìm thấy quy tắc giá cho ngày ${date.toISOString()}`,
-      );
+      throw new Error(`Không tìm thấy quy tắc giá cho ngày ${date.toISOString()}`);
     }
 
     return Number(rules[0].pricePerNight);

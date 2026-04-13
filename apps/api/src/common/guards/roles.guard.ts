@@ -1,11 +1,7 @@
-import {
-  Injectable,
-  ExecutionContext,
-  ForbiddenException,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { ROLES_KEY } from "../decorators/roles.decorator";
-import { Role } from "@prisma/client";
+import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '../decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class RolesGuard {
@@ -23,9 +19,7 @@ export class RolesGuard {
 
     const hasRole = requiredRoles.includes(user.role);
     if (!hasRole) {
-      throw new ForbiddenException(
-        "Bạn không có quyền thực hiện hành động này",
-      );
+      throw new ForbiddenException('Bạn không có quyền thực hiện hành động này');
     }
     return true;
   }
