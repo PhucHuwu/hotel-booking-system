@@ -6,6 +6,8 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start:prod": "node dist/main",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts"

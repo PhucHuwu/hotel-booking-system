@@ -1,0 +1,13 @@
+# Các file/thư mục này khi merge từ develop → main sẽ bị bỏ qua
+# Git giữ nguyên phiên bản của main (không có) thay vì lấy từ develop
+
+*.md            merge=ours
+.cursor/        merge=ours
+.opencode/      merge=ours
+.claude/        merge=ours
+.agents/        merge=ours
+IMPORTANT.md    merge=ours
+TASK.md         merge=ours
+MEMBERS.md      merge=ours
+ARCHITECH.md    merge=ours
+REQUIREMENTS.md merge=ours

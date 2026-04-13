@@ -3,10 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-} from "@nestjs/common";
-import { PrismaService } from "../common/prisma/prisma.service";
-import { BookingStatus } from "@prisma/client";
-import { CreateReviewDto } from "./dto/reviews.dto";
+} from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { BookingStatus } from '@prisma/client';
+import { CreateReviewDto } from './dto/reviews.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -18,18 +18,18 @@ export class ReviewsService {
       include: { room: true },
     });
 
-    if (!booking) throw new NotFoundException("Đơn đặt phòng không tồn tại");
+    if (!booking) throw new NotFoundException('Đơn đặt phòng không tồn tại');
     if (booking.customerId !== customerId) {
-      throw new BadRequestException("Không có quyền đánh giá đơn này");
+      throw new BadRequestException('Không có quyền đánh giá đơn này');
     }
     if (booking.status !== BookingStatus.CHECKED_OUT) {
-      throw new BadRequestException("Chỉ có thể đánh giá sau khi trả phòng");
+      throw new BadRequestException('Chỉ có thể đánh giá sau khi trả phòng');
     }
 
     const existing = await this.prisma.review.findUnique({
       where: { bookingId: dto.bookingId },
     });
-    if (existing) throw new ConflictException("Đơn này đã được đánh giá");
+    if (existing) throw new ConflictException('Đơn này đã được đánh giá');
 
     return this.prisma.review.create({
       data: {
@@ -51,7 +51,7 @@ export class ReviewsService {
         skip,
         take: limit,
         include: { customer: { select: { firstName: true, lastName: true } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.review.count({ where: { roomTypeId, isApproved: true } }),
     ]);

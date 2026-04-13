@@ -8,9 +8,9 @@ import {
   Min,
   IsEnum,
   IsDateString,
-} from "class-validator";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { RoomStatus, PricingType } from "@prisma/client";
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { RoomStatus, PricingType } from '@prisma/client';
 
 export class CreateRoomTypeDto {
   @ApiProperty()

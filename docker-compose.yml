@@ -9,12 +9,12 @@ services:
       POSTGRES_PASSWORD: hotel_secret
       POSTGRES_DB: hotel_db
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hotel -d hotel_db"]
+      test: ['CMD-SHELL', 'pg_isready -U hotel -d hotel_db']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,11 +26,11 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass redis_secret
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis_secret", "ping"]
+      test: ['CMD', 'redis-cli', '-a', 'redis_secret', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,14 +45,14 @@ services:
       RABBITMQ_DEFAULT_PASS: rabbit_secret
       RABBITMQ_DEFAULT_VHOST: hotel_vhost
     ports:
-      - "5672:5672" # AMQP
-      - "15672:15672" # Management UI → http://localhost:15672
+      - '5672:5672' # AMQP
+      - '15672:15672' # Management UI → http://localhost:15672
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./infra/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
       - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
       timeout: 10s
       retries: 5
@@ -73,7 +73,7 @@ services:
       PGBOUNCER_DEFAULT_POOL_SIZE: 20
       PGBOUNCER_LISTEN_PORT: 6432
     ports:
-      - "6432:6432"
+      - '6432:6432'
     depends_on:
       postgres:
         condition: service_healthy

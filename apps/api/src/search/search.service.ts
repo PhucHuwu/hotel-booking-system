@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../common/prisma/prisma.service";
-import { RedisService } from "../common/redis/redis.service";
-import { PricingService } from "../rooms/pricing.service";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { RedisService } from '../common/redis/redis.service';
+import { PricingService } from '../rooms/pricing.service';
 
 export interface SearchParams {
   checkIn: string;
@@ -39,7 +39,7 @@ export class SearchService {
       include: {
         rooms: {
           where: {
-            status: { in: ["AVAILABLE", "DIRTY"] },
+            status: { in: ['AVAILABLE', 'DIRTY'] },
             id: { notIn: bookedRoomIds },
           },
         },
@@ -57,15 +57,11 @@ export class SearchService {
         checkOut,
       );
 
-      const nights = Math.ceil(
-        (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
-      );
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
       const pricePerNight = totalPrice / nights;
 
-      if (params.minPrice !== undefined && pricePerNight < params.minPrice)
-        continue;
-      if (params.maxPrice !== undefined && pricePerNight > params.maxPrice)
-        continue;
+      if (params.minPrice !== undefined && pricePerNight < params.minPrice) continue;
+      if (params.maxPrice !== undefined && pricePerNight > params.maxPrice) continue;
 
       results.push({
         roomType: {
@@ -89,14 +85,11 @@ export class SearchService {
     return results;
   }
 
-  private async getBookedRoomIds(
-    checkIn: Date,
-    checkOut: Date,
-  ): Promise<string[]> {
+  private async getBookedRoomIds(checkIn: Date, checkOut: Date): Promise<string[]> {
     const conflicting = await this.prisma.booking.findMany({
       where: {
         status: {
-          in: ["PENDING_PAYMENT", "PAYING", "CONFIRMED", "CHECKED_IN"],
+          in: ['PENDING_PAYMENT', 'PAYING', 'CONFIRMED', 'CHECKED_IN'],
         },
         AND: [{ checkIn: { lt: checkOut } }, { checkOut: { gt: checkIn } }],
       },

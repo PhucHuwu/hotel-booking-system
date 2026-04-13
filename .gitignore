@@ -8,3 +8,18 @@ coverage/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+
+# Dev-only tool config dirs (tracked on develop, blocked on main)
+.agents/
+.opencode/
+.claude/
+.cursor/
+
+# Dev-only spec/doc files (tracked on develop, not on main)
+ARCHITECH.md
+TASK.md
+MEMBERS.md
+REQUIREMENTS.md
+IMPORTANT.md
+RULE.md
+opencode.json

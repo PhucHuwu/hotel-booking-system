@@ -1,16 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../common/prisma/prisma.service";
-import { PaymentStatus, BookingStatus } from "@prisma/client";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { PaymentStatus, BookingStatus } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getRevenueReport(
-    from: string,
-    to: string,
-    groupBy: "day" | "week" | "month" = "day",
-  ) {
+  async getRevenueReport(from: string, to: string, groupBy: 'day' | 'week' | 'month' = 'day') {
     const fromDate = new Date(from);
     const toDate = new Date(to);
 
@@ -24,7 +20,7 @@ export class ReportsService {
           include: { room: { include: { roomType: true } } },
         },
       },
-      orderBy: { paidAt: "asc" },
+      orderBy: { paidAt: 'asc' },
     });
 
     const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -33,8 +29,7 @@ export class ReportsService {
     const byRoomType: Record<string, { count: number; revenue: number }> = {};
     for (const p of payments) {
       const typeName = p.booking.room.roomType.name;
-      if (!byRoomType[typeName])
-        byRoomType[typeName] = { count: 0, revenue: 0 };
+      if (!byRoomType[typeName]) byRoomType[typeName] = { count: 0, revenue: 0 };
       byRoomType[typeName].count++;
       byRoomType[typeName].revenue += Number(p.amount);
     }
@@ -62,15 +57,12 @@ export class ReportsService {
       },
     });
 
-    const days = Math.ceil(
-      (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24),
-    );
+    const days = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
     const totalRoomNights = totalRooms * days;
-    const occupancyRate =
-      totalRoomNights > 0 ? (checkedIn / totalRoomNights) * 100 : 0;
+    const occupancyRate = totalRoomNights > 0 ? (checkedIn / totalRoomNights) * 100 : 0;
 
     const byRoomType = await this.prisma.booking.groupBy({
-      by: ["roomId"],
+      by: ['roomId'],
       where: {
         status: { in: [BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
         checkIn: { gte: fromDate },
@@ -94,7 +86,7 @@ export class ReportsService {
     const toDate = new Date(to);
 
     const summary = await this.prisma.booking.groupBy({
-      by: ["status"],
+      by: ['status'],
       where: { createdAt: { gte: fromDate, lte: toDate } },
       _count: { id: true },
     });
