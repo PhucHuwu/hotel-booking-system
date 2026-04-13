@@ -1,0 +1,141 @@
+{
+  "rabbit_version": "3.13.0",
+  "vhosts": [{ "name": "hotel_vhost" }],
+  "exchanges": [
+    {
+      "name": "booking.exchange",
+      "vhost": "hotel_vhost",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "payment.exchange",
+      "vhost": "hotel_vhost",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "notification.exchange",
+      "vhost": "hotel_vhost",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "dead.letter.exchange",
+      "vhost": "hotel_vhost",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false
+    }
+  ],
+  "queues": [
+    {
+      "name": "booking.created.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dead.letter.exchange",
+        "x-message-ttl": 86400000
+      }
+    },
+    {
+      "name": "booking.confirmed.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": { "x-dead-letter-exchange": "dead.letter.exchange" }
+    },
+    {
+      "name": "booking.cancelled.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": { "x-dead-letter-exchange": "dead.letter.exchange" }
+    },
+    {
+      "name": "payment.initiated.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": { "x-dead-letter-exchange": "dead.letter.exchange" }
+    },
+    {
+      "name": "payment.success.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": { "x-dead-letter-exchange": "dead.letter.exchange" }
+    },
+    {
+      "name": "payment.failed.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": { "x-dead-letter-exchange": "dead.letter.exchange" }
+    },
+    {
+      "name": "notification.email.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": {
+        "x-dead-letter-exchange": "dead.letter.exchange",
+        "x-max-retries": 3
+      }
+    },
+    {
+      "name": "dead.letter.queue",
+      "vhost": "hotel_vhost",
+      "durable": true,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "booking.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "booking.created.queue",
+      "destination_type": "queue",
+      "routing_key": "booking.created"
+    },
+    {
+      "source": "booking.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "booking.confirmed.queue",
+      "destination_type": "queue",
+      "routing_key": "booking.confirmed"
+    },
+    {
+      "source": "booking.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "booking.cancelled.queue",
+      "destination_type": "queue",
+      "routing_key": "booking.cancelled"
+    },
+    {
+      "source": "payment.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "payment.initiated.queue",
+      "destination_type": "queue",
+      "routing_key": "payment.initiated"
+    },
+    {
+      "source": "payment.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "payment.success.queue",
+      "destination_type": "queue",
+      "routing_key": "payment.success"
+    },
+    {
+      "source": "payment.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "payment.failed.queue",
+      "destination_type": "queue",
+      "routing_key": "payment.failed"
+    },
+    {
+      "source": "notification.exchange",
+      "vhost": "hotel_vhost",
+      "destination": "notification.email.queue",
+      "destination_type": "queue",
+      "routing_key": ""
+    }
+  ]
+}
