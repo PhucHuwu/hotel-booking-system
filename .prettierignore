@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+pnpm-lock.yaml
+
+# generated / infra artifacts
+apps/api/prisma/migrations
+infra/rabbitmq/definitions.json

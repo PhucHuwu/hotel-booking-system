@@ -62,7 +62,7 @@ flowchart TB
     ADM[Next.js 15\nAdmin/Staff Portal\n:3001]
   end
 
-  API[NestJS Monolith API\n:3000 /api/v1\n\nAuth | Users | Rooms | Pricing | Search\nBookings | Saga Scheduler | Payments (VNPay)\nStaff | Reports | Notifications]
+  API[NestJS Monolith API\n:3000 /api/v1\n\nAuth, Users, Rooms, Pricing, Search\nBookings, Saga Scheduler, Payments (VNPay)\nStaff, Reports, Notifications]
 
   DB[(PostgreSQL\n:5432\nvia PgBouncer)]
   REDIS[(Redis\n:6379\nSessions, Dist Lock, Search cache)]
@@ -222,6 +222,22 @@ RabbitMQ    → localhost:5672
 pnpm install
 ```
 
+### 3.1 Code style (khuyên dùng)
+
+Repo đã có sẵn cấu hình `Prettier` + `EditorConfig` ở root:
+
+```bash
+pnpm format        # format toàn bộ repo
+pnpm format:check  # kiểm tra format (không ghi file)
+pnpm lint          # chạy lint theo từng app
+pnpm lint:fix      # tự sửa một số lỗi lint phổ biến
+```
+
+Sau `pnpm install`, git hooks sẽ tự được cài qua `husky` (`prepare` script):
+
+- `pre-commit`: chạy `lint-staged` (format + lint các file staged)
+- `commit-msg`: chạy `commitlint` theo Conventional Commits
+
 ### 4. Cấu hình môi trường
 
 ```bash
@@ -380,8 +396,10 @@ flowchart TB
 <type>(<scope>): <subject>
 
 type: feat | fix | chore | refactor | docs | test
-scope: auth | rooms | bookings | payments | staff | reports | frontend
+scope: auth | rooms | bookings | payments | staff | reports | frontend | infra | repo
 ```
+
+CI trên GitHub Actions (`.github/workflows/ci.yml`) sẽ chạy: `format:check` → `lint` → `build` cho branch `main` và `develop`.
 
 ---
 
