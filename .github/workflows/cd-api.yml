@@ -4,16 +4,16 @@ on:
   push:
     branches: [main, staging, develop]
     paths:
-      - "apps/api/**"
-      - "packages/**"
-      - "pnpm-workspace.yaml"
-      - "turbo.json"
+      - 'apps/api/**'
+      - 'packages/**'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment"
+        description: 'Target environment'
         required: true
-        default: "develop"
+        default: 'develop'
         type: choice
         options: [production, staging, develop]
 
