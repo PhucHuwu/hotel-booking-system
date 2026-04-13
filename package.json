@@ -5,6 +5,11 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "prepare": "husky",
+    "commitlint": "commitlint",
     "test": "turbo run test",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
@@ -12,11 +17,26 @@
     "docker:down": "docker compose down"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.38.0",
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
+    "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.3",
-    "@types/node": "^22.10.7",
-    "prettier": "^3.4.2",
-    "eslint": "^9.18.0"
+    "typescript-eslint": "^8.46.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,cjs,mjs,json,yml,yaml,md}": [
+      "prettier --write"
+    ],
+    "apps/*/src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "engines": {
     "node": ">=20.0.0",
