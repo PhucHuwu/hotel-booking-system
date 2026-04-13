@@ -1,7 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import * as amqplib from "amqplib";
-import { RabbitMQService } from "../../common/rabbitmq/rabbitmq.service";
-import { BookingsService } from "../bookings.service";
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import * as amqplib from 'amqplib';
+import { RabbitMQService } from '../../common/rabbitmq/rabbitmq.service';
+import { BookingsService } from '../bookings.service';
 
 @Injectable()
 export class BookingSaga implements OnModuleInit {
@@ -13,13 +13,9 @@ export class BookingSaga implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.rabbitmq.subscribe("payment.success.queue", (msg) =>
-      this.handlePaymentSuccess(msg),
-    );
-    await this.rabbitmq.subscribe("payment.failed.queue", (msg) =>
-      this.handlePaymentFailed(msg),
-    );
-    this.logger.log("BookingSaga consumers started");
+    await this.rabbitmq.subscribe('payment.success.queue', (msg) => this.handlePaymentSuccess(msg));
+    await this.rabbitmq.subscribe('payment.failed.queue', (msg) => this.handlePaymentFailed(msg));
+    this.logger.log('BookingSaga consumers started');
   }
 
   private async handlePaymentSuccess(msg: amqplib.ConsumeMessage) {
@@ -45,10 +41,7 @@ export class BookingSaga implements OnModuleInit {
       await this.bookingsService.expireBooking(bookingId);
       this.logger.log(`Booking ${bookingId} cancelled due to payment failure`);
     } catch (err) {
-      this.logger.error(
-        `Failed to cancel booking ${bookingId} after payment failure`,
-        err,
-      );
+      this.logger.error(`Failed to cancel booking ${bookingId} after payment failure`, err);
       throw err;
     }
   }

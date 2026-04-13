@@ -1,22 +1,16 @@
-import {
-  IsString,
-  IsInt,
-  IsOptional,
-  Min,
-  IsDateString,
-} from "class-validator";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsString, IsInt, IsOptional, Min, IsDateString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBookingDto {
-  @ApiProperty({ example: "room-id" })
+  @ApiProperty({ example: 'room-id' })
   @IsString()
   roomId!: string;
 
-  @ApiProperty({ example: "2026-05-01" })
+  @ApiProperty({ example: '2026-05-01' })
   @IsDateString()
   checkIn!: string;
 
-  @ApiProperty({ example: "2026-05-03" })
+  @ApiProperty({ example: '2026-05-03' })
   @IsDateString()
   checkOut!: string;
 

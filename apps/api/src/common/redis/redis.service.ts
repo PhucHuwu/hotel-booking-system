@@ -1,6 +1,6 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import Redis from "ioredis";
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -9,7 +9,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit() {
-    const url = this.config.get<string>("REDIS_URL", "redis://localhost:6379");
+    const url = this.config.get<string>('REDIS_URL', 'redis://localhost:6379');
     this.client = new Redis(url, {
       lazyConnect: true,
       maxRetriesPerRequest: 3,
@@ -26,15 +26,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (ttlSeconds) {
-      await this.client.set(key, value, "EX", ttlSeconds);
+      await this.client.set(key, value, 'EX', ttlSeconds);
     } else {
       await this.client.set(key, value);
     }
   }
 
   async setNx(key: string, value: string, ttlMs: number): Promise<boolean> {
-    const result = await this.client.set(key, value, "PX", ttlMs, "NX");
-    return result === "OK";
+    const result = await this.client.set(key, value, 'PX', ttlMs, 'NX');
+    return result === 'OK';
   }
 
   async del(key: string): Promise<void> {

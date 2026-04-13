@@ -3,15 +3,15 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-} from "@nestjs/common";
-import { PrismaService } from "../common/prisma/prisma.service";
+} from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
 import {
   CreateRoomTypeDto,
   UpdateRoomTypeDto,
   CreateRoomDto,
   UpdateRoomDto,
   CreatePricingRuleDto,
-} from "./dto/rooms.dto";
+} from './dto/rooms.dto';
 
 @Injectable()
 export class RoomsService {
@@ -32,20 +32,18 @@ export class RoomsService {
       where: {
         room: { roomTypeId: id },
         status: {
-          in: ["PENDING_PAYMENT", "PAYING", "CONFIRMED", "CHECKED_IN"],
+          in: ['PENDING_PAYMENT', 'PAYING', 'CONFIRMED', 'CHECKED_IN'],
         },
       },
     });
     if (activeBookings > 0) {
-      throw new BadRequestException(
-        "Không thể xóa loại phòng đang có đơn đặt phòng hoạt động",
-      );
+      throw new BadRequestException('Không thể xóa loại phòng đang có đơn đặt phòng hoạt động');
     }
     await this.prisma.roomType.update({
       where: { id },
       data: { isActive: false },
     });
-    return { message: "Đã vô hiệu hóa loại phòng" };
+    return { message: 'Đã vô hiệu hóa loại phòng' };
   }
 
   async listRoomTypes(includeInactive = false) {
@@ -54,7 +52,7 @@ export class RoomsService {
       include: {
         pricingRules: {
           where: { isActive: true },
-          orderBy: { priority: "desc" },
+          orderBy: { priority: 'desc' },
         },
         _count: { select: { rooms: true } },
       },
@@ -66,7 +64,7 @@ export class RoomsService {
       where: { id },
       include: { pricingRules: { where: { isActive: true } }, rooms: true },
     });
-    if (!rt) throw new NotFoundException("Loại phòng không tồn tại");
+    if (!rt) throw new NotFoundException('Loại phòng không tồn tại');
     return rt;
   }
 
@@ -74,7 +72,7 @@ export class RoomsService {
     const existing = await this.prisma.room.findUnique({
       where: { roomNumber: dto.roomNumber },
     });
-    if (existing) throw new ConflictException("Số phòng đã tồn tại");
+    if (existing) throw new ConflictException('Số phòng đã tồn tại');
     await this.findRoomTypeOrFail(dto.roomTypeId);
     return this.prisma.room.create({ data: dto, include: { roomType: true } });
   }
@@ -91,12 +89,11 @@ export class RoomsService {
   async deleteRoom(id: string) {
     await this.findRoomOrFail(id);
     const active = await this.prisma.booking.count({
-      where: { roomId: id, status: { in: ["CONFIRMED", "CHECKED_IN"] } },
+      where: { roomId: id, status: { in: ['CONFIRMED', 'CHECKED_IN'] } },
     });
-    if (active > 0)
-      throw new BadRequestException("Phòng đang có khách, không thể xóa");
+    if (active > 0) throw new BadRequestException('Phòng đang có khách, không thể xóa');
     await this.prisma.room.delete({ where: { id } });
-    return { message: "Đã xóa phòng" };
+    return { message: 'Đã xóa phòng' };
   }
 
   async listRooms(roomTypeId?: string, floor?: number) {
@@ -106,7 +103,7 @@ export class RoomsService {
         ...(floor !== undefined && { floor }),
       },
       include: { roomType: true },
-      orderBy: [{ floor: "asc" }, { roomNumber: "asc" }],
+      orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
     });
   }
 
@@ -126,23 +123,23 @@ export class RoomsService {
 
   async deletePricingRule(id: string) {
     const rule = await this.prisma.pricingRule.findUnique({ where: { id } });
-    if (!rule) throw new NotFoundException("Quy tắc giá không tồn tại");
+    if (!rule) throw new NotFoundException('Quy tắc giá không tồn tại');
     await this.prisma.pricingRule.update({
       where: { id },
       data: { isActive: false },
     });
-    return { message: "Đã vô hiệu hóa quy tắc giá" };
+    return { message: 'Đã vô hiệu hóa quy tắc giá' };
   }
 
   private async findRoomTypeOrFail(id: string) {
     const rt = await this.prisma.roomType.findUnique({ where: { id } });
-    if (!rt) throw new NotFoundException("Loại phòng không tồn tại");
+    if (!rt) throw new NotFoundException('Loại phòng không tồn tại');
     return rt;
   }
 
   private async findRoomOrFail(id: string) {
     const room = await this.prisma.room.findUnique({ where: { id } });
-    if (!room) throw new NotFoundException("Phòng không tồn tại");
+    if (!room) throw new NotFoundException('Phòng không tồn tại');
     return room;
   }
 }

@@ -1,11 +1,6 @@
-import {
-  Injectable,
-  OnModuleInit,
-  OnModuleDestroy,
-  Logger,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import * as amqplib from "amqplib";
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as amqplib from 'amqplib';
 
 @Injectable()
 export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
@@ -25,47 +20,36 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
   private async connect() {
     try {
-      const url = this.config.get<string>(
-        "RABBITMQ_URL",
-        "amqp://localhost:5672",
-      );
+      const url = this.config.get<string>('RABBITMQ_URL', 'amqp://localhost:5672');
       this.connection = await amqplib.connect(url);
       this.channel = await this.connection.createChannel();
 
-      await this.channel.assertExchange("hotel.events", "topic", {
+      await this.channel.assertExchange('hotel.events', 'topic', {
         durable: true,
       });
-      await this.channel.assertExchange("hotel.notifications", "direct", {
-        durable: true,
-      });
-
-      await this.channel.assertQueue("payment.success.queue", {
-        durable: true,
-      });
-      await this.channel.assertQueue("payment.failed.queue", { durable: true });
-      await this.channel.assertQueue("notification.email.queue", {
+      await this.channel.assertExchange('hotel.notifications', 'direct', {
         durable: true,
       });
 
+      await this.channel.assertQueue('payment.success.queue', {
+        durable: true,
+      });
+      await this.channel.assertQueue('payment.failed.queue', { durable: true });
+      await this.channel.assertQueue('notification.email.queue', {
+        durable: true,
+      });
+
+      await this.channel.bindQueue('payment.success.queue', 'hotel.events', 'payment.success');
+      await this.channel.bindQueue('payment.failed.queue', 'hotel.events', 'payment.failed');
       await this.channel.bindQueue(
-        "payment.success.queue",
-        "hotel.events",
-        "payment.success",
-      );
-      await this.channel.bindQueue(
-        "payment.failed.queue",
-        "hotel.events",
-        "payment.failed",
-      );
-      await this.channel.bindQueue(
-        "notification.email.queue",
-        "hotel.notifications",
-        "notification.email",
+        'notification.email.queue',
+        'hotel.notifications',
+        'notification.email',
       );
 
-      this.logger.log("RabbitMQ connected");
+      this.logger.log('RabbitMQ connected');
     } catch (err) {
-      this.logger.error("RabbitMQ connection failed", err);
+      this.logger.error('RabbitMQ connection failed', err);
     }
   }
 
@@ -76,13 +60,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     } catch (_) {}
   }
 
-  async publish(
-    exchange: string,
-    routingKey: string,
-    payload: object,
-  ): Promise<void> {
+  async publish(exchange: string, routingKey: string, payload: object): Promise<void> {
     if (!this.channel) {
-      this.logger.warn("RabbitMQ channel not available");
+      this.logger.warn('RabbitMQ channel not available');
       return;
     }
     const content = Buffer.from(JSON.stringify(payload));
@@ -94,7 +74,7 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
     handler: (msg: amqplib.ConsumeMessage) => Promise<void>,
   ): Promise<void> {
     if (!this.channel) {
-      this.logger.warn("RabbitMQ channel not available, skipping subscribe");
+      this.logger.warn('RabbitMQ channel not available, skipping subscribe');
       return;
     }
     await this.channel.prefetch(1);

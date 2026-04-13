@@ -1,11 +1,5 @@
-import {
-  IsString,
-  IsOptional,
-  IsEmail,
-  MinLength,
-  Matches,
-} from "class-validator";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsString, IsOptional, IsEmail, MinLength, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
   @ApiPropertyOptional()
@@ -28,7 +22,7 @@ export class UpdateProfileDto {
   @IsString()
   @MinLength(8)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
-    message: "Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt",
+    message: 'Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt',
   })
   newPassword?: string;
 

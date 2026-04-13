@@ -25,6 +25,7 @@ export default [
       },
     },
     rules: {
+      'no-empty': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -42,6 +43,7 @@ export default [
       },
     },
     rules: {
+      'no-empty': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
         'warn',

@@ -1,5 +1,5 @@
-import { Module } from "@nestjs/common";
-import { NotificationsConsumer } from "./notifications.consumer";
+import { Module } from '@nestjs/common';
+import { NotificationsConsumer } from './notifications.consumer';
 
 @Module({
   providers: [NotificationsConsumer],

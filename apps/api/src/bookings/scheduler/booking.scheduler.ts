@@ -1,7 +1,7 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
-import { BookingsService } from "../bookings.service";
-import { RedisService } from "../../common/redis/redis.service";
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { BookingsService } from '../bookings.service';
+import { RedisService } from '../../common/redis/redis.service';
 
 @Injectable()
 export class BookingScheduler {
@@ -14,12 +14,10 @@ export class BookingScheduler {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async expireUnpaidBookings() {
-    const lockKey = "scheduler:booking:expire";
-    const acquired = await this.redis.setNx(lockKey, "1", 55000);
+    const lockKey = 'scheduler:booking:expire';
+    const acquired = await this.redis.setNx(lockKey, '1', 55000);
     if (!acquired) {
-      this.logger.debug(
-        "Booking expiry scheduler already running on another instance",
-      );
+      this.logger.debug('Booking expiry scheduler already running on another instance');
       return;
     }
 
