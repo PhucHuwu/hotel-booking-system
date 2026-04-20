@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "vercel-build": "prisma generate && nest build",
+    "vercel-build": "prisma generate && tsc -p tsconfig.serverless.json",
     "dev": "nest start --watch",
     "start:prod": "node dist/main",
     "db:generate": "prisma generate",

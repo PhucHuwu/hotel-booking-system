@@ -4,10 +4,10 @@
   "regions": ["sin1"],
   "builds": [
     {
-      "src": "api/index.ts",
+      "src": "src/vercel/index.ts",
       "use": "@vercel/node",
       "config": { "maxDuration": 60, "memory": 1024 }
     }
   ],
-  "routes": [{ "src": "/(.*)", "dest": "/api/index.ts" }]
+  "routes": [{ "src": "/(.*)", "dest": "src/vercel/index.ts" }]
 }
