@@ -79,6 +79,7 @@ export class SearchService {
           images: roomType.images,
         },
         availableRooms: roomType.rooms.length,
+        availableRoomIds: roomType.rooms.map((r) => r.id),
         pricePerNight,
         totalPrice,
         nights,
