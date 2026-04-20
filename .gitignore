@@ -8,3 +8,9 @@ coverage/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+*.md 
+**/*.md
+.opencode
+.cursor
+.claude
+.agents
