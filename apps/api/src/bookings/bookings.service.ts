@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../common/prisma/prisma.service";
 import { RedisService } from "../common/redis/redis.service";
-import { RabbitMQService } from "../common/rabbitmq/rabbitmq.service";
+import { EventsService } from "../common/events/events.service";
 import { PricingService } from "../rooms/pricing.service";
 import { CreateBookingDto } from "./dto/bookings.dto";
 import { BookingStatus, Role } from "@prisma/client";
@@ -17,7 +17,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-    private readonly rabbitmq: RabbitMQService,
+    private readonly events: EventsService,
     private readonly pricingService: PricingService,
   ) {}
 
@@ -82,7 +82,7 @@ export class BookingsService {
         include: { room: { include: { roomType: true } } },
       });
 
-      await this.publishOutbox("hotel.events", "booking.created", {
+      await this.publishOutbox("booking.created", {
         bookingId: booking.id,
         customerId,
         roomId: dto.roomId,
@@ -166,7 +166,7 @@ export class BookingsService {
       data: { status: BookingStatus.CANCELLED },
     });
 
-    await this.rabbitmq.publish("hotel.events", "booking.cancelled", {
+    await this.events.emit("booking.cancelled", {
       bookingId,
       customerId: userId,
       reason: reason ?? "Customer cancelled",
@@ -193,13 +193,7 @@ export class BookingsService {
       data: { status: BookingStatus.CONFIRMED },
     });
 
-    await this.rabbitmq.publish("hotel.events", "booking.confirmed", {
-      bookingId,
-      customerId: booking.customerId,
-    });
-
-    await this.publishOutbox("hotel.notifications", "notification.email", {
-      type: "booking.confirmed",
+    await this.events.emit("booking.confirmed", {
       bookingId,
       customerId: booking.customerId,
     });
@@ -225,7 +219,7 @@ export class BookingsService {
       data: { status: BookingStatus.EXPIRED },
     });
 
-    await this.rabbitmq.publish("hotel.events", "booking.expired", {
+    await this.events.emit("booking.expired", {
       bookingId,
       customerId: booking.customerId,
     });
@@ -288,8 +282,7 @@ export class BookingsService {
       }),
     ]);
 
-    await this.publishOutbox("hotel.notifications", "notification.email", {
-      type: "checkout.completed",
+    await this.events.emit("checkout.completed", {
       bookingId,
       customerId: booking.customerId,
       finalAmount,
@@ -307,20 +300,24 @@ export class BookingsService {
     });
   }
 
+  /**
+   * Persists the event into the outbox table for durability/audit, then
+   * dispatches it through the in-process bus. Historical calls used
+   * RabbitMQ exchanges; we keep the same table so we can replay later.
+   */
   private async publishOutbox(
-    exchange: string,
-    routingKey: string,
-    payload: object,
+    eventType: string,
+    payload: Record<string, unknown>,
   ) {
     await this.prisma.outboxEvent.create({
       data: {
-        aggregateId: (payload as any).bookingId ?? "unknown",
-        eventType: routingKey,
-        exchange,
-        routingKey,
-        payload,
+        aggregateId: (payload.bookingId as string) ?? "unknown",
+        eventType,
+        exchange: "hotel.events",
+        routingKey: eventType,
+        payload: payload as object,
       },
     });
-    await this.rabbitmq.publish(exchange, routingKey, payload);
+    await this.events.emit(eventType as never, payload);
   }
 }

@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../common/prisma/prisma.service";
-import { RabbitMQService } from "../common/rabbitmq/rabbitmq.service";
+import { EventsService } from "../common/events/events.service";
 import { VNPayGateway } from "./gateway/vnpay.gateway";
 import { PaymentMethod, PaymentStatus, BookingStatus } from "@prisma/client";
 
@@ -13,7 +13,7 @@ import { PaymentMethod, PaymentStatus, BookingStatus } from "@prisma/client";
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly rabbitmq: RabbitMQService,
+    private readonly events: EventsService,
     private readonly vnpay: VNPayGateway,
   ) {}
 
@@ -120,13 +120,13 @@ export class PaymentsService {
     });
 
     if (isSuccess) {
-      await this.rabbitmq.publish("hotel.events", "payment.success", {
+      await this.events.emit("payment.success", {
         bookingId: booking.id,
         amount,
         gatewayTransactionId,
       });
     } else {
-      await this.rabbitmq.publish("hotel.events", "payment.failed", {
+      await this.events.emit("payment.failed", {
         bookingId: booking.id,
         responseCode,
         gatewayTransactionId,
