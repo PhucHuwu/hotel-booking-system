@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "@/components/providers";
+import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
-  title: "Hotel Booking",
-  description: "Hệ thống đặt phòng khách sạn trực tuyến",
+  title: "Sapphire Stay – Hệ thống đặt phòng khách sạn",
+  description:
+    "Đặt phòng khách sạn trực tuyến nhanh chóng, an toàn và tiện lợi.",
 };
 
 export default function RootLayout({
@@ -13,7 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body className="min-h-screen bg-slate-50">
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
