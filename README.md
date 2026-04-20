@@ -22,12 +22,15 @@ tmdt/
 
 | Tầng       | Công nghệ                                                                    |
 | ---------- | ---------------------------------------------------------------------------- |
-| Backend    | NestJS 11, Prisma 6, PostgreSQL 16, JWT (access+refresh), class-validator    |
-| Async      | RabbitMQ 3.13 (notifications), Redis 7 (lock + cache)                        |
+| Backend    | NestJS 10, Prisma 6, PostgreSQL 16, JWT (access+refresh), class-validator    |
+| Async      | In-process EventBus + Upstash Redis (REST) cho lock & cache                  |
+| Email      | Resend HTTP API                                                              |
+| Cron       | Endpoint `POST /internal/cron/expire-bookings` (CRON_SECRET) + Vercel Cron / cron-job.org |
 | Payment    | VNPay sandbox                                                                |
-| Frontend   | Next.js 15 App Router, React 19, TailwindCSS 3, React Query, Zustand, Recharts |
+| Frontend   | Next.js 16 App Router, React 19, TailwindCSS 3, React Query, Zustand, Recharts |
 | Validation | Zod + react-hook-form                                                        |
 | Monorepo   | pnpm workspaces + Turborepo                                                  |
+| Deploy     | Vercel (web + api), single Postgres (Prisma Postgres / Neon)                 |
 
 ---
 
@@ -172,12 +175,14 @@ PORT=3000
 DATABASE_URL=postgresql://hotel:hotel_secret@localhost:5432/hotel_db
 JWT_ACCESS_SECRET=<min_32_chars>
 JWT_REFRESH_SECRET=<min_32_chars>
-REDIS_URL=redis://:redis_secret@localhost:6379
-RABBITMQ_URL=amqp://hotel:rabbit_secret@localhost:5672/hotel_vhost
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=noreply@hotel.com
-SMTP_PASS=<app_password>
+# Optional — fallback to in-memory on dev if omitted
+UPSTASH_REDIS_REST_URL=https://<region>.upstash.io
+UPSTASH_REDIS_REST_TOKEN=<token>
+# Optional — emails are skipped (only persisted) if omitted
+RESEND_API_KEY=re_xxx
+EMAIL_FROM=Sapphire Stay <onboarding@resend.dev>
+# Cron endpoint bearer
+CRON_SECRET=<random_32_chars>
 CORS_ORIGINS=http://localhost:3001
 VNPAY_TMN_CODE=<sandbox_tmn>
 VNPAY_HASH_SECRET=<sandbox_secret>
@@ -186,6 +191,21 @@ VNPAY_RETURN_URL=http://localhost:3001/payment/result
 ```
 
 `apps/web` đọc từ biến `NEXT_PUBLIC_API_URL` (mặc định `http://localhost:3000`).
+
+### Trigger cron hủy đơn quá hạn
+
+Sau khi deploy, đăng ký 1 job tại [cron-job.org](https://cron-job.org) (miễn phí, chạy mỗi phút):
+
+```
+POST https://<api-domain>/api/v1/internal/cron/expire-bookings
+Header: Authorization: Bearer <CRON_SECRET>
+```
+
+Hoặc dùng Vercel Cron bằng cách thêm vào `vercel.json` (Hobby plan chỉ chạy 1 lần/ngày):
+
+```json
+{ "crons": [{ "path": "/api/v1/internal/cron/expire-bookings", "schedule": "0 * * * *" }] }
+```
 
 ---
 
